@@ -1,0 +1,10 @@
+name: Man10HoverNick
+version: ${project.version}
+main: red.man10.man10hovernick.Man10HoverNick
+authors: [Mr_IK]
+description: Man10 Head Hover Nickname Plugin
+commands:
+  mhn:
+    description: Man10delivery
+    usage: /<command>
+    default: op
