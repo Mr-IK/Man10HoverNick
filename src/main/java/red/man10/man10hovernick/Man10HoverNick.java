@@ -352,11 +352,11 @@ public final class Man10HoverNick extends JavaPlugin implements Listener {
     @Override
     public void onEnable() {
         // Plugin startup logic
+        list = new HashMap<>();
         vault = new Man10VaultAPI("Man10HoverNick");
         MHNData.loadConfig(this);
         getCommand("mhn").setExecutor(this);
         NameTagManager.EnableLoad(this);
-        list = new HashMap<>();
         getServer().getPluginManager().registerEvents(this, this);
     }
 
