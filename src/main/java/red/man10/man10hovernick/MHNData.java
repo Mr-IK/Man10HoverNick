@@ -1,5 +1,6 @@
 package red.man10.man10hovernick;
 
+import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
@@ -43,6 +44,9 @@ public class MHNData {
                     }
 
                     plugin.list.put(UUID.fromString(filename),new NameTagManager.NameTagData(UUID.fromString(filename),loadNick(UUID.fromString(filename)).prefix,loadNick(UUID.fromString(filename)).suffix));
+                    if(Bukkit.getPlayer(UUID.fromString(filename))!=null){
+                        NameTagManager.setTag(Bukkit.getPlayer(UUID.fromString(filename)),loadNick(UUID.fromString(filename)).prefix,loadNick(UUID.fromString(filename)).suffix);
+                    }
                 }
             }
         }
@@ -165,9 +169,7 @@ public class MHNData {
         File f = new File(userdata, File.separator + fileName + ".yml");
         FileConfiguration data = YamlConfiguration.loadConfiguration(f);
         if(data.contains("id")) {
-            Datas datas = getRegist(data.getString("id"));
-            removeNick(uuid);
-            return datas;
+            return getRegist(data.getString("id"));
         }
         return new Datas(null,null,null,null);
     }

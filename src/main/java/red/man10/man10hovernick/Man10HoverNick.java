@@ -6,18 +6,28 @@ import net.md_5.bungee.api.chat.ComponentBuilder;
 import net.md_5.bungee.api.chat.HoverEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemFlag;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 import red.man10.man10vaultapiplus.JPYBalanceFormat;
 import red.man10.man10vaultapiplus.Man10VaultAPI;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.UUID;
 
 
@@ -57,77 +67,223 @@ public final class Man10HoverNick extends JavaPlugin implements Listener {
             return true;
         }
         if(args.length == 0){
-            p.sendMessage("§6========"+prefix+"§6=========");
-            if(p.hasPermission("mhn.op")) {
-                sendSuggestCommand(p,"§c/mhn register [id] [prefix] [suffix] [mode] (金額) §f: ニックネームをレジスタする","クリックでチャットに打ち込む","/mhn register ");
-                sendSuggestCommand(p,"§c/mhn unregister [id] §f: ニックネームをアンレジスタする","クリックでチャットに打ち込む","/mhn unregister ");
-                sendSuggestCommand(p,"§c/mhn unset [user名] §f: ニックネームを強制アンセットする","クリックでチャットに打ち込む","/mhn unset ");
-                sendSuggestCommand(p,"§c/mhn give [user名] [id] §f: ニックネームをギブする","クリックでチャットに打ち込む","/mhn give ");
-                sendSuggestCommand(p,"§c/mhn take [user名] [id] §f: ニックネームをテイクする","クリックでチャットに打ち込む","/mhn take ");
-                p.sendMessage("§cモードリスト: pex buy free pex");
+            Inventory inv;
+            if (list.containsKey(p.getUniqueId())) {
+                inv = Bukkit.createInventory(null,9,"§0現在のニックネーム: "+list.get(p.getUniqueId()).getPrefix() + p.getName() + list.get(p.getUniqueId()).getSuffix());
+            } else {
+                inv = Bukkit.createInventory(null,9,"§0現在のニックネーム: なし");
             }
-            sendSuggestCommand(p,"§e/mhn set [id] §f: ニックネームをセットする","クリックでチャットに打ち込む","/mhn set ");
-            sendHoverText(p,"§e/mhn list §f: 使えるニックネームリストを表示","クリックでリストを見る","/mhn list");
-            sendHoverText(p,"§e/mhn shop §f: 使えるニックネームリストを表示","クリックでショップを開く","/mhn shop");
-            sendSuggestCommand(p,"§e/mhn buy [id] §f: ニックネームを買う","クリックでチャットに打ち込む","/mhn buy ");
-            sendHoverText(p,"§e/mhn unset §f: ニックネームをリセットする","クリックでリセット","/mhn unset");
-            if(list.containsKey(p.getUniqueId())){
-                p.sendMessage("§e現在のニックネーム: "+list.get(p.getUniqueId()).getPrefix()+p.getName()+list.get(p.getUniqueId()).getSuffix());
-            }else{
-                p.sendMessage("§e現在のニックネーム: なし");
-            }
-            p.sendMessage("§6=============================");
+            ItemStack item = new ItemStack(Material.NAME_TAG);
+            ItemMeta itemm = item.getItemMeta();
+            itemm.setDisplayName("§a§l二つ名設定");
+            itemm.setUnbreakable(true);
+            itemm.addItemFlags(ItemFlag.HIDE_UNBREAKABLE);
+            List<String> lore = new ArrayList<>();
+            lore.add("§e二つ名を設定します");
+            itemm.setLore(lore);
+            item.setItemMeta(itemm);
+            inv.setItem(2,item);
+            ItemStack item3 = new ItemStack(Material.GLASS);
+            ItemMeta itemm3 = item3.getItemMeta();
+            itemm3.setDisplayName("§c§l二つ名リセット");
+            itemm3.addEnchant(Enchantment.PROTECTION_ENVIRONMENTAL,1,true);
+            itemm3.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+            List<String> lore3 = new ArrayList<>();
+            lore3.add("§a二つ名をリセットします");
+            itemm3.setLore(lore3);
+            item3.setItemMeta(itemm3);
+            inv.setItem(4,item3);
+            ItemStack item2 = new ItemStack(Material.CHEST);
+            ItemMeta itemm2 = item2.getItemMeta();
+            itemm2.setDisplayName("§e§l二つ名ショップ");
+            itemm2.addEnchant(Enchantment.PROTECTION_ENVIRONMENTAL,1,true);
+            itemm2.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+            List<String> lore2 = new ArrayList<>();
+            lore2.add("§aショップを開きます！");
+            itemm2.setLore(lore2);
+            item2.setItemMeta(itemm2);
+            inv.setItem(6,item2);
+            pstats.put(p.getUniqueId(),"main");
+            p.openInventory(inv);
             return true;
-        }else if(args.length == 1){
-            if(args[0].equalsIgnoreCase("unset")) {
+        }else if(args.length == 1) {
+            if (args[0].equalsIgnoreCase("unset")) {
                 NameTagManager.setTag(p, "", "");
                 list.remove(p.getUniqueId());
                 MHNData.removeNick(p.getUniqueId());
                 p.sendMessage(prefix + "§aアンセットに成功しました。");
                 return true;
-            }else if(args[0].equalsIgnoreCase("list")) {
-                for(String str:MHNData.registlist()){
-                    MHNData.Datas data = MHNData.getRegist(str);
-                    if(data==null){
-                        continue;
-                    }
-                    if(data.mode == MHNData.Mode.PEX){
-                        if(!p.hasPermission("mhn."+str)){
-                            if(!p.hasPermission("mhn.op")) {
-                                continue;
-                            }else{
-                                p.sendMessage(prefix + "§e" + data.name + ": §a表示『" + data.prefix + p.getName() + data.suffix + "§a』§cOP権限で見ています");
-                                continue;
-                            }
-                        }
-                    }else if(data.mode == MHNData.Mode.BUY||data.mode == MHNData.Mode.COMMAND){
-                        if(!MHNData.listNick(p).contains(str)){
-                            if(!p.hasPermission("mhn.op")) {
-                                continue;
-                            }else{
-                                p.sendMessage(prefix + "§e" + data.name + ": §a表示『" + data.prefix + p.getName() + data.suffix + "§a』§cOP権限で見ています");
-                                continue;
-                            }
-                        }
-                    }
-                    sendHoverText(p,prefix + "§e" + data.name + ": §a表示『" + data.prefix + p.getName() + data.suffix + "§a』","クリックでセット","/mhn set "+data.name);
+            } else if (args[0].equalsIgnoreCase("list")) {
+                Inventory inv = Bukkit.createInventory(null,54,"§0二つ名リスト page:1");
+                ItemStack item = new ItemStack(Material.REDSTONE_BLOCK);
+                ItemMeta itemm = item.getItemMeta();
+                itemm.setDisplayName("§a§l前のページへ戻る");
+                item.setItemMeta(itemm);
+                for(int i = 45; i < 49; i++){
+                    inv.setItem(i,item);
                 }
-                return true;
-            }else if(args[0].equalsIgnoreCase("shop")) {
-                for(String str:MHNData.registlist()) {
+                ItemStack items = new ItemStack(Material.EMERALD_BLOCK);
+                ItemMeta itemsm = items.getItemMeta();
+                itemsm.setDisplayName("§a§l次のページへ");
+                items.setItemMeta(itemsm);
+                for(int i = 50; i < 54; i++){
+                    inv.setItem(i,items);
+                }
+                ItemStack itemss = new ItemStack(Material.COMPASS);
+                ItemMeta itemssm = itemss.getItemMeta();
+                itemssm.setDisplayName("1");
+                itemss.setItemMeta(itemssm);
+                inv.setItem(49,itemss);
+                int i = 0;
+                for (String str : MHNData.registlist()) {
+                    if(i==44){
+                        break;
+                    }
                     MHNData.Datas data = MHNData.getRegist(str);
                     if (data == null) {
                         continue;
                     }
-                    if(data.mode != MHNData.Mode.BUY){
+                    if (data.mode == MHNData.Mode.PEX) {
+                        if (!p.hasPermission("mhn." + str)) {
+                            if (!p.hasPermission("mhn.op")) {
+                                continue;
+                            } else {
+                                ItemStack item2 = new ItemStack(Material.NETHERRACK);
+                                ItemMeta itemm2 = item2.getItemMeta();
+                                itemm2.setDisplayName("§c"+data.name);
+                                itemm2.addEnchant(Enchantment.PROTECTION_ENVIRONMENTAL,1,true);
+                                itemm2.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+                                List<String> lore2 = new ArrayList<>();
+                                lore2.add("§a表示『" + data.prefix + p.getName() + data.suffix + "§a』");
+                                lore2.add("§cOP権限で見ています");
+                                itemm2.setLore(lore2);
+                                item2.setItemMeta(itemm2);
+                                inv.setItem(i,item2);
+                                i++;
+                                continue;
+                            }
+                        }
+                    } else if (data.mode == MHNData.Mode.BUY || data.mode == MHNData.Mode.COMMAND) {
+                        if (!MHNData.listNick(p).contains(str)) {
+                            if (!p.hasPermission("mhn.op")) {
+                                continue;
+                            } else {
+                                ItemStack item2 = new ItemStack(Material.NETHERRACK);
+                                ItemMeta itemm2 = item2.getItemMeta();
+                                itemm2.setDisplayName("§c"+data.name);
+                                itemm2.addEnchant(Enchantment.PROTECTION_ENVIRONMENTAL,1,true);
+                                itemm2.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+                                List<String> lore2 = new ArrayList<>();
+                                lore2.add("§a表示『" + data.prefix + p.getName() + data.suffix + "§a』");
+                                lore2.add("§cOP権限で見ています");
+                                itemm2.setLore(lore2);
+                                item2.setItemMeta(itemm2);
+                                inv.setItem(i,item2);
+                                i++;
+                                continue;
+                            }
+                        }
+                    }
+                    ItemStack item2 = new ItemStack(Material.PAPER);
+                    ItemMeta itemm2 = item2.getItemMeta();
+                    itemm2.setDisplayName("§a"+data.name);
+                    itemm2.addEnchant(Enchantment.PROTECTION_ENVIRONMENTAL,1,true);
+                    itemm2.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+                    List<String> lore2 = new ArrayList<>();
+                    lore2.add("§a表示『" + data.prefix + p.getName() + data.suffix + "§a』");
+                    itemm2.setLore(lore2);
+                    item2.setItemMeta(itemm2);
+                    inv.setItem(i,item2);
+                    i++;
+                }
+                pstats.put(p.getUniqueId(),"list");
+                p.openInventory(inv);
+                return true;
+            } else if (args[0].equalsIgnoreCase("shop")) {
+                Inventory inv = Bukkit.createInventory(null,54,"§0二つ名ショップ page:1");
+                ItemStack item = new ItemStack(Material.REDSTONE_BLOCK);
+                ItemMeta itemm = item.getItemMeta();
+                itemm.setDisplayName("§a§l前のページへ戻る");
+                item.setItemMeta(itemm);
+                for(int i = 45; i < 49; i++){
+                    inv.setItem(i,item);
+                }
+                ItemStack items = new ItemStack(Material.EMERALD_BLOCK);
+                ItemMeta itemsm = items.getItemMeta();
+                itemsm.setDisplayName("§a§l次のページへ");
+                items.setItemMeta(itemsm);
+                for(int i = 50; i < 54; i++){
+                    inv.setItem(i,items);
+                }
+                ItemStack itemss = new ItemStack(Material.COMPASS);
+                ItemMeta itemssm = itemss.getItemMeta();
+                itemssm.setDisplayName("1");
+                itemss.setItemMeta(itemssm);
+                inv.setItem(49,itemss);
+                int i = 0;
+                for (String str : MHNData.registlist()) {
+                    if(i==44){
+                        break;
+                    }
+                    MHNData.Datas data = MHNData.getRegist(str);
+                    if (data == null) {
                         continue;
                     }
-                    if(MHNData.listNick(p).contains(str)){
-                        p.sendMessage(prefix + "§6" + str + ": §a『" + data.prefix + p.getName() + data.suffix + "§a』§e" + new JPYBalanceFormat(config.getDouble(str + ".money")).getString() + "円 §a購入済み");
-                    }else{
-                        sendHoverText(p,prefix + "§6" + str + ": §a『" + data.prefix + p.getName() + data.suffix + "§a』§e" + new JPYBalanceFormat(config.getDouble(str + ".money")) .getString()+ "円 §c未購入","クリックで購入","/mhn buy "+str);
+                    if (data.mode != MHNData.Mode.BUY) {
+                        continue;
+                    }
+                    if (MHNData.listNick(p).contains(str)) {
+                        ItemStack item2 = new ItemStack(Material.STAINED_GLASS,1,(short)5);
+                        ItemMeta itemm2 = item2.getItemMeta();
+                        itemm2.setDisplayName("§c"+data.name);
+                        itemm2.addEnchant(Enchantment.PROTECTION_ENVIRONMENTAL,1,true);
+                        itemm2.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+                        List<String> lore2 = new ArrayList<>();
+                        lore2.add("§a表示『" + data.prefix + p.getName() + data.suffix + "§a』");
+                        lore2.add("§e" + new JPYBalanceFormat(config.getDouble(str + ".money")).getString() + "円 §a購入済み");
+                        itemm2.setLore(lore2);
+                        item2.setItemMeta(itemm2);
+                        inv.setItem(i,item2);
+                        i++;
+                    } else {
+                        ItemStack item2 = new ItemStack(Material.STAINED_GLASS,1,(short)14);
+                        ItemMeta itemm2 = item2.getItemMeta();
+                        itemm2.setDisplayName("§a"+data.name);
+                        itemm2.addEnchant(Enchantment.PROTECTION_ENVIRONMENTAL,1,true);
+                        itemm2.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+                        List<String> lore2 = new ArrayList<>();
+                        lore2.add("§a表示『" + data.prefix + p.getName() + data.suffix + "§a』");
+                        lore2.add("§e" + new JPYBalanceFormat(config.getDouble(str + ".money")).getString() + "円 §c未購入");
+                        itemm2.setLore(lore2);
+                        item2.setItemMeta(itemm2);
+                        inv.setItem(i,item2);
+                        i++;
                     }
                 }
+                pstats.put(p.getUniqueId(),"shop");
+                p.openInventory(inv);
+                return true;
+            } else if (args[0].equalsIgnoreCase("help")) {
+                p.sendMessage("§6========" + prefix + "§6=========");
+                if (p.hasPermission("mhn.op")) {
+                    sendSuggestCommand(p, "§c/mhn register [id] [prefix] [suffix] [mode] (金額) §f: ニックネームをレジスタする", "クリックでチャットに打ち込む", "/mhn register ");
+                    sendSuggestCommand(p, "§c/mhn unregister [id] §f: ニックネームをアンレジスタする", "クリックでチャットに打ち込む", "/mhn unregister ");
+                    sendSuggestCommand(p, "§c/mhn unset [user名] §f: ニックネームを強制アンセットする", "クリックでチャットに打ち込む", "/mhn unset ");
+                    sendSuggestCommand(p, "§c/mhn give [user名] [id] §f: ニックネームをギブする", "クリックでチャットに打ち込む", "/mhn give ");
+                    sendSuggestCommand(p, "§c/mhn take [user名] [id] §f: ニックネームをテイクする", "クリックでチャットに打ち込む", "/mhn take ");
+                    p.sendMessage("§cモードリスト: command buy free pex");
+                }
+                sendSuggestCommand(p, "§e/mhn set [id] §f: ニックネームをセットする", "クリックでチャットに打ち込む", "/mhn set ");
+                sendHoverText(p, "§e/mhn list §f: 使えるニックネームリストを表示", "クリックでリストを見る", "/mhn list");
+                sendHoverText(p, "§e/mhn shop §f: 使えるニックネームリストを表示", "クリックでショップを開く", "/mhn shop");
+                sendSuggestCommand(p, "§e/mhn buy [id] §f: ニックネームを買う", "クリックでチャットに打ち込む", "/mhn buy ");
+                sendHoverText(p, "§e/mhn unset §f: ニックネームをリセットする", "クリックでリセット", "/mhn unset");
+                if (list.containsKey(p.getUniqueId())) {
+                    p.sendMessage("§e現在のニックネーム: " + list.get(p.getUniqueId()).getPrefix() + p.getName() + list.get(p.getUniqueId()).getSuffix());
+                } else {
+                    p.sendMessage("§e現在のニックネーム: なし");
+                }
+                p.sendMessage("§6=============================");
                 return true;
             }
         }else if(args.length == 2){
@@ -321,31 +477,50 @@ public final class Man10HoverNick extends JavaPlugin implements Listener {
                 return true;
             }
         }
-        p.sendMessage("§6========"+prefix+"§6=========");
-        if(p.hasPermission("mhn.op")) {
-            sendSuggestCommand(p,"§c/mhn register [id] [prefix] [suffix] [mode] (金額) §f: ニックネームをレジスタする","クリックでチャットに打ち込む","/mhn register ");
-            sendSuggestCommand(p,"§c/mhn unregister [id] §f: ニックネームをアンレジスタする","クリックでチャットに打ち込む","/mhn unregister ");
-            sendSuggestCommand(p,"§c/mhn unset [user名] §f: ニックネームを強制アンセットする","クリックでチャットに打ち込む","/mhn unset ");
-            sendSuggestCommand(p,"§c/mhn give [user名] [id] §f: ニックネームをギブする","クリックでチャットに打ち込む","/mhn give ");
-            sendSuggestCommand(p,"§c/mhn take [user名] [id] §f: ニックネームをテイクする","クリックでチャットに打ち込む","/mhn take ");
-            p.sendMessage("§cモードリスト: pex buy free pex");
+        Inventory inv;
+        if (list.containsKey(p.getUniqueId())) {
+            inv = Bukkit.createInventory(null,9,"§0現在のニックネーム: "+list.get(p.getUniqueId()).getPrefix() + p.getName() + list.get(p.getUniqueId()).getSuffix());
+        } else {
+            inv = Bukkit.createInventory(null,9,"§0現在のニックネーム: なし");
         }
-        sendSuggestCommand(p,"§e/mhn set [id] §f: ニックネームをセットする","クリックでチャットに打ち込む","/mhn set ");
-        sendHoverText(p,"§e/mhn list §f: 使えるニックネームリストを表示","クリックでリストを見る","/mhn list");
-        sendHoverText(p,"§e/mhn shop §f: 使えるニックネームリストを表示","クリックでショップを開く","/mhn shop");
-        sendSuggestCommand(p,"§e/mhn buy [id] §f: ニックネームを買う","クリックでチャットに打ち込む","/mhn buy ");
-        sendHoverText(p,"§e/mhn unset §f: ニックネームをリセットする","クリックでリセット","/mhn unset");
-        if(list.containsKey(p.getUniqueId())){
-            p.sendMessage("§e現在のニックネーム: "+list.get(p.getUniqueId()).getPrefix()+p.getName()+list.get(p.getUniqueId()).getSuffix());
-        }else{
-            p.sendMessage("§e現在のニックネーム: なし");
-        }
-        p.sendMessage("§6=============================");
+        ItemStack item = new ItemStack(Material.NAME_TAG);
+        ItemMeta itemm = item.getItemMeta();
+        itemm.setDisplayName("§a§l二つ名設定");
+        itemm.setUnbreakable(true);
+        itemm.addItemFlags(ItemFlag.HIDE_UNBREAKABLE);
+        List<String> lore = new ArrayList<>();
+        lore.add("§e二つ名を設定します");
+        itemm.setLore(lore);
+        item.setItemMeta(itemm);
+        inv.setItem(2,item);
+        ItemStack item3 = new ItemStack(Material.GLASS);
+        ItemMeta itemm3 = item3.getItemMeta();
+        itemm3.setDisplayName("§c§l二つ名リセット");
+        itemm3.addEnchant(Enchantment.PROTECTION_ENVIRONMENTAL,1,true);
+        itemm3.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+        List<String> lore3 = new ArrayList<>();
+        lore3.add("§a二つ名をリセットします");
+        itemm3.setLore(lore3);
+        item3.setItemMeta(itemm3);
+        inv.setItem(4,item3);
+        ItemStack item2 = new ItemStack(Material.CHEST);
+        ItemMeta itemm2 = item2.getItemMeta();
+        itemm2.setDisplayName("§e§l二つ名ショップ");
+        itemm2.addEnchant(Enchantment.PROTECTION_ENVIRONMENTAL,1,true);
+        itemm2.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+        List<String> lore2 = new ArrayList<>();
+        lore2.add("§aショップを開きます！");
+        itemm2.setLore(lore2);
+        item2.setItemMeta(itemm2);
+        inv.setItem(6,item2);
+        pstats.put(p.getUniqueId(),"main");
+        p.openInventory(inv);
         return true;
     }
 
     String prefix = "§e[§d§lM§f§lHover§6§lNick§e]§r";
     HashMap<UUID,NameTagManager.NameTagData> list;
+    HashMap<UUID,String> pstats;
     FileConfiguration config;
     Man10VaultAPI vault;
 
@@ -353,6 +528,7 @@ public final class Man10HoverNick extends JavaPlugin implements Listener {
     public void onEnable() {
         // Plugin startup logic
         list = new HashMap<>();
+        pstats = new HashMap<>();
         vault = new Man10VaultAPI("Man10HoverNick");
         MHNData.loadConfig(this);
         getCommand("mhn").setExecutor(this);
@@ -378,6 +554,389 @@ public final class Man10HoverNick extends JavaPlugin implements Listener {
             }
         }
     }
+
+    @EventHandler
+    public void onInventoryClick(InventoryClickEvent e){
+        if(pstats.containsKey(e.getWhoClicked().getUniqueId())){
+            e.setCancelled(true);
+            if(e.getClickedInventory()==e.getWhoClicked().getInventory()){
+                return;
+            }
+            if(pstats.get(e.getWhoClicked().getUniqueId()).equalsIgnoreCase("main")) {
+                Player p = (Player) e.getWhoClicked();
+                if (e.getSlot() == 2) {
+                    p.closeInventory();
+                    p.chat("/mhn list");
+                } else if (e.getSlot() == 4) {
+                    p.closeInventory();
+                    p.chat("/mhn unset");
+                } else if (e.getSlot() == 6) {
+                    p.closeInventory();
+                    p.chat("/mhn shop");
+                }
+            }else if(pstats.get(e.getWhoClicked().getUniqueId()).equalsIgnoreCase("list")){
+                Player p = (Player) e.getWhoClicked();
+                int ii = Integer.parseInt(e.getClickedInventory().getItem(49).getItemMeta().getDisplayName());
+                if (e.getSlot() >= 45&&e.getSlot() <= 48) {
+                    if(ii==1){
+                        return;
+                    }
+                    p.closeInventory();
+                    Inventory inv = Bukkit.createInventory(null,54,"§0二つ名リスト page:"+(ii-1));
+                    ItemStack item = new ItemStack(Material.REDSTONE_BLOCK);
+                    ItemMeta itemm = item.getItemMeta();
+                    itemm.setDisplayName("§a§l前のページへ戻る");
+                    item.setItemMeta(itemm);
+                    for(int i = 45; i < 49; i++){
+                        inv.setItem(i,item);
+                    }
+                    ItemStack items = new ItemStack(Material.EMERALD_BLOCK);
+                    ItemMeta itemsm = items.getItemMeta();
+                    itemsm.setDisplayName("§a§l次のページへ");
+                    items.setItemMeta(itemsm);
+                    for(int i = 50; i < 54; i++){
+                        inv.setItem(i,items);
+                    }
+                    ItemStack itemss = new ItemStack(Material.COMPASS);
+                    ItemMeta itemssm = itemss.getItemMeta();
+                    itemssm.setDisplayName(ii-1 +"");
+                    itemss.setItemMeta(itemssm);
+                    inv.setItem(49,itemss);
+                    int i = 0;
+                    int iii = (ii - 2) * 44;
+                    for (String str : MHNData.registlist()) {
+                        if(iii > 0){
+                            iii--;
+                            continue;
+                        }
+                        if(i==44){
+                            break;
+                        }
+                        MHNData.Datas data = MHNData.getRegist(str);
+                        if (data == null) {
+                            continue;
+                        }
+                        if (data.mode == MHNData.Mode.PEX) {
+                            if (!p.hasPermission("mhn." + str)) {
+                                if (!p.hasPermission("mhn.op")) {
+                                    continue;
+                                } else {
+                                    ItemStack item2 = new ItemStack(Material.NETHERRACK);
+                                    ItemMeta itemm2 = item2.getItemMeta();
+                                    itemm2.setDisplayName("§c"+data.name);
+                                    itemm2.addEnchant(Enchantment.PROTECTION_ENVIRONMENTAL,1,true);
+                                    itemm2.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+                                    List<String> lore2 = new ArrayList<>();
+                                    lore2.add("§a表示『" + data.prefix + p.getName() + data.suffix + "§a』");
+                                    lore2.add("§cOP権限で見ています");
+                                    itemm2.setLore(lore2);
+                                    item2.setItemMeta(itemm2);
+                                    inv.setItem(i,item2);
+                                    i++;
+                                    continue;
+                                }
+                            }
+                        } else if (data.mode == MHNData.Mode.BUY || data.mode == MHNData.Mode.COMMAND) {
+                            if (!MHNData.listNick(p).contains(str)) {
+                                if (!p.hasPermission("mhn.op")) {
+                                    continue;
+                                } else {
+                                    ItemStack item2 = new ItemStack(Material.NETHERRACK);
+                                    ItemMeta itemm2 = item2.getItemMeta();
+                                    itemm2.setDisplayName("§c"+data.name);
+                                    itemm2.addEnchant(Enchantment.PROTECTION_ENVIRONMENTAL,1,true);
+                                    itemm2.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+                                    List<String> lore2 = new ArrayList<>();
+                                    lore2.add("§a表示『" + data.prefix + p.getName() + data.suffix + "§a』");
+                                    lore2.add("§cOP権限で見ています");
+                                    itemm2.setLore(lore2);
+                                    item2.setItemMeta(itemm2);
+                                    inv.setItem(i,item2);
+                                    i++;
+                                    continue;
+                                }
+                            }
+                        }
+                        ItemStack item2 = new ItemStack(Material.PAPER);
+                        ItemMeta itemm2 = item2.getItemMeta();
+                        itemm2.setDisplayName("§a"+data.name);
+                        itemm2.addEnchant(Enchantment.PROTECTION_ENVIRONMENTAL,1,true);
+                        itemm2.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+                        List<String> lore2 = new ArrayList<>();
+                        lore2.add("§a表示『" + data.prefix + p.getName() + data.suffix + "§a』");
+                        itemm2.setLore(lore2);
+                        item2.setItemMeta(itemm2);
+                        inv.setItem(i,item2);
+                        i++;
+                    }
+                    pstats.put(p.getUniqueId(),"list");
+                    p.openInventory(inv);
+                } else if (e.getSlot() >= 50&&e.getSlot() <= 53) {
+                    p.closeInventory();
+                    Inventory inv = Bukkit.createInventory(null,54,"§0二つ名リスト page:"+(ii+1));
+                    ItemStack item = new ItemStack(Material.REDSTONE_BLOCK);
+                    ItemMeta itemm = item.getItemMeta();
+                    itemm.setDisplayName("§a§l前のページへ戻る");
+                    item.setItemMeta(itemm);
+                    for(int i = 45; i < 49; i++){
+                        inv.setItem(i,item);
+                    }
+                    ItemStack items = new ItemStack(Material.EMERALD_BLOCK);
+                    ItemMeta itemsm = items.getItemMeta();
+                    itemsm.setDisplayName("§a§l次のページへ");
+                    items.setItemMeta(itemsm);
+                    for(int i = 50; i < 54; i++){
+                        inv.setItem(i,items);
+                    }
+                    ItemStack itemss = new ItemStack(Material.COMPASS);
+                    ItemMeta itemssm = itemss.getItemMeta();
+                    itemssm.setDisplayName(ii+1 +"");
+                    itemss.setItemMeta(itemssm);
+                    inv.setItem(49,itemss);
+                    int i = 0;
+                    int iii = (ii) * 44;
+                    for (String str : MHNData.registlist()) {
+                        if(iii != 0){
+                            iii--;
+                            continue;
+                        }
+                        if(i==44){
+                            break;
+                        }
+                        MHNData.Datas data = MHNData.getRegist(str);
+                        if (data == null) {
+                            continue;
+                        }
+                        if (data.mode == MHNData.Mode.PEX) {
+                            if (!p.hasPermission("mhn." + str)) {
+                                if (!p.hasPermission("mhn.op")) {
+                                    continue;
+                                } else {
+                                    ItemStack item2 = new ItemStack(Material.NETHERRACK);
+                                    ItemMeta itemm2 = item2.getItemMeta();
+                                    itemm2.setDisplayName("§c"+data.name);
+                                    itemm2.addEnchant(Enchantment.PROTECTION_ENVIRONMENTAL,1,true);
+                                    itemm2.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+                                    List<String> lore2 = new ArrayList<>();
+                                    lore2.add("§a表示『" + data.prefix + p.getName() + data.suffix + "§a』");
+                                    lore2.add("§cOP権限で見ています");
+                                    itemm2.setLore(lore2);
+                                    item2.setItemMeta(itemm2);
+                                    inv.setItem(i,item2);
+                                    i++;
+                                    continue;
+                                }
+                            }
+                        } else if (data.mode == MHNData.Mode.BUY || data.mode == MHNData.Mode.COMMAND) {
+                            if (!MHNData.listNick(p).contains(str)) {
+                                if (!p.hasPermission("mhn.op")) {
+                                    continue;
+                                } else {
+                                    ItemStack item2 = new ItemStack(Material.NETHERRACK);
+                                    ItemMeta itemm2 = item2.getItemMeta();
+                                    itemm2.setDisplayName("§c"+data.name);
+                                    itemm2.addEnchant(Enchantment.PROTECTION_ENVIRONMENTAL,1,true);
+                                    itemm2.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+                                    List<String> lore2 = new ArrayList<>();
+                                    lore2.add("§a表示『" + data.prefix + p.getName() + data.suffix + "§a』");
+                                    lore2.add("§cOP権限で見ています");
+                                    itemm2.setLore(lore2);
+                                    item2.setItemMeta(itemm2);
+                                    inv.setItem(i,item2);
+                                    i++;
+                                    continue;
+                                }
+                            }
+                        }
+                        ItemStack item2 = new ItemStack(Material.PAPER);
+                        ItemMeta itemm2 = item2.getItemMeta();
+                        itemm2.setDisplayName("§a"+data.name);
+                        itemm2.addEnchant(Enchantment.PROTECTION_ENVIRONMENTAL,1,true);
+                        itemm2.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+                        List<String> lore2 = new ArrayList<>();
+                        lore2.add("§a表示『" + data.prefix + p.getName() + data.suffix + "§a』");
+                        itemm2.setLore(lore2);
+                        item2.setItemMeta(itemm2);
+                        inv.setItem(i,item2);
+                        i++;
+                    }
+                    pstats.put(p.getUniqueId(),"list");
+                    p.openInventory(inv);
+                } else if (e.getSlot() >=0&&e.getSlot() <= 44) {
+                    if(e.getClickedInventory().getItem(e.getSlot())==null){
+                        return;
+                    }
+                    if(e.getClickedInventory().getItem(e.getSlot()).getType()==Material.NETHERRACK){
+                        return;
+                    }
+                    p.closeInventory();
+                    p.chat("/mhn set "+e.getClickedInventory().getItem(e.getSlot()).getItemMeta().getDisplayName().replace("§a",""));
+                }
+            }else if(pstats.get(e.getWhoClicked().getUniqueId()).equalsIgnoreCase("shop")){
+                Player p = (Player) e.getWhoClicked();
+                int ii = Integer.parseInt(e.getClickedInventory().getItem(49).getItemMeta().getDisplayName());
+                if (e.getSlot() >= 45&&e.getSlot() <= 48) {
+                    if (ii == 1) {
+                        return;
+                    }
+                    p.closeInventory();
+                    Inventory inv = Bukkit.createInventory(null, 54,"§0二つ名ショップ page:"+(ii-1));
+                    ItemStack item = new ItemStack(Material.REDSTONE_BLOCK);
+                    ItemMeta itemm = item.getItemMeta();
+                    itemm.setDisplayName("§a§l前のページへ戻る");
+                    item.setItemMeta(itemm);
+                    for (int i = 45; i < 49; i++) {
+                        inv.setItem(i, item);
+                    }
+                    ItemStack items = new ItemStack(Material.EMERALD_BLOCK);
+                    ItemMeta itemsm = items.getItemMeta();
+                    itemsm.setDisplayName("§a§l次のページへ");
+                    items.setItemMeta(itemsm);
+                    for (int i = 50; i < 54; i++) {
+                        inv.setItem(i, items);
+                    }
+                    ItemStack itemss = new ItemStack(Material.COMPASS);
+                    ItemMeta itemssm = itemss.getItemMeta();
+                    itemssm.setDisplayName(ii-1 +"");
+                    itemss.setItemMeta(itemssm);
+                    inv.setItem(49, itemss);
+                    int i = 0;
+                    int iii = (ii - 2) * 44;
+                    for (String str : MHNData.registlist()) {
+                        if(iii > 0){
+                            iii--;
+                            continue;
+                        }
+                        if (i == 44) {
+                            break;
+                        }
+                        MHNData.Datas data = MHNData.getRegist(str);
+                        if (data == null) {
+                            continue;
+                        }
+                        if (data.mode != MHNData.Mode.BUY) {
+                            continue;
+                        }
+                        if (MHNData.listNick(p).contains(str)) {
+                            ItemStack item2 = new ItemStack(Material.STAINED_GLASS, 1, (short) 5);
+                            ItemMeta itemm2 = item2.getItemMeta();
+                            itemm2.setDisplayName("§c" + data.name);
+                            itemm2.addEnchant(Enchantment.PROTECTION_ENVIRONMENTAL, 1, true);
+                            itemm2.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+                            List<String> lore2 = new ArrayList<>();
+                            lore2.add("§a表示『" + data.prefix + p.getName() + data.suffix + "§a』");
+                            lore2.add("§e" + new JPYBalanceFormat(config.getDouble(str + ".money")).getString() + "円 §a購入済み");
+                            itemm2.setLore(lore2);
+                            item2.setItemMeta(itemm2);
+                            inv.setItem(i, item2);
+                            i++;
+                        } else {
+                            ItemStack item2 = new ItemStack(Material.STAINED_GLASS, 1, (short) 14);
+                            ItemMeta itemm2 = item2.getItemMeta();
+                            itemm2.setDisplayName("§a" + data.name);
+                            itemm2.addEnchant(Enchantment.PROTECTION_ENVIRONMENTAL, 1, true);
+                            itemm2.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+                            List<String> lore2 = new ArrayList<>();
+                            lore2.add("§a表示『" + data.prefix + p.getName() + data.suffix + "§a』");
+                            lore2.add("§e" + new JPYBalanceFormat(config.getDouble(str + ".money")).getString() + "円 §c未購入");
+                            itemm2.setLore(lore2);
+                            item2.setItemMeta(itemm2);
+                            inv.setItem(i, item2);
+                            i++;
+                        }
+                    }
+                    pstats.put(p.getUniqueId(), "shop");
+                    p.openInventory(inv);
+                } else if (e.getSlot() >= 50&&e.getSlot() <= 53) {
+                    p.closeInventory();
+                    Inventory inv = Bukkit.createInventory(null, 54,"§0二つ名ショップ page:"+(ii+1));
+                    ItemStack item = new ItemStack(Material.REDSTONE_BLOCK);
+                    ItemMeta itemm = item.getItemMeta();
+                    itemm.setDisplayName("§a§l前のページへ戻る");
+                    item.setItemMeta(itemm);
+                    for (int i = 45; i < 49; i++) {
+                        inv.setItem(i, item);
+                    }
+                    ItemStack items = new ItemStack(Material.EMERALD_BLOCK);
+                    ItemMeta itemsm = items.getItemMeta();
+                    itemsm.setDisplayName("§a§l次のページへ");
+                    items.setItemMeta(itemsm);
+                    for (int i = 50; i < 54; i++) {
+                        inv.setItem(i, items);
+                    }
+                    ItemStack itemss = new ItemStack(Material.COMPASS);
+                    ItemMeta itemssm = itemss.getItemMeta();
+                    itemssm.setDisplayName(ii+1 +"");
+                    itemss.setItemMeta(itemssm);
+                    inv.setItem(49, itemss);
+                    int i = 0;
+                    int iii = (ii) * 44;
+                    for (String str : MHNData.registlist()) {
+                        if(iii != 0){
+                            iii--;
+                            continue;
+                        }
+                        if (i == 44) {
+                            break;
+                        }
+                        MHNData.Datas data = MHNData.getRegist(str);
+                        if (data == null) {
+                            continue;
+                        }
+                        if (data.mode != MHNData.Mode.BUY) {
+                            continue;
+                        }
+                        if (MHNData.listNick(p).contains(str)) {
+                            ItemStack item2 = new ItemStack(Material.STAINED_GLASS, 1, (short) 5);
+                            ItemMeta itemm2 = item2.getItemMeta();
+                            itemm2.setDisplayName("§c" + data.name);
+                            itemm2.addEnchant(Enchantment.PROTECTION_ENVIRONMENTAL, 1, true);
+                            itemm2.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+                            List<String> lore2 = new ArrayList<>();
+                            lore2.add("§a表示『" + data.prefix + p.getName() + data.suffix + "§a』");
+                            lore2.add("§e" + new JPYBalanceFormat(config.getDouble(str + ".money")).getString() + "円 §a購入済み");
+                            itemm2.setLore(lore2);
+                            item2.setItemMeta(itemm2);
+                            inv.setItem(i, item2);
+                            i++;
+                        } else {
+                            ItemStack item2 = new ItemStack(Material.STAINED_GLASS, 1, (short) 14);
+                            ItemMeta itemm2 = item2.getItemMeta();
+                            itemm2.setDisplayName("§a" + data.name);
+                            itemm2.addEnchant(Enchantment.PROTECTION_ENVIRONMENTAL, 1, true);
+                            itemm2.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+                            List<String> lore2 = new ArrayList<>();
+                            lore2.add("§a表示『" + data.prefix + p.getName() + data.suffix + "§a』");
+                            lore2.add("§e" + new JPYBalanceFormat(config.getDouble(str + ".money")).getString() + "円 §c未購入");
+                            itemm2.setLore(lore2);
+                            item2.setItemMeta(itemm2);
+                            inv.setItem(i, item2);
+                            i++;
+                        }
+                    }
+                    pstats.put(p.getUniqueId(), "shop");
+                    p.openInventory(inv);
+                } else if (e.getSlot() >=0&&e.getSlot() <= 44) {
+                    if(e.getClickedInventory().getItem(e.getSlot())==null){
+                        return;
+                    }
+                    if(e.getClickedInventory().getItem(e.getSlot()).getDurability() == 5){
+                        return;
+                    }
+                    p.chat("/mhn buy "+e.getClickedInventory().getItem(e.getSlot()).getItemMeta().getDisplayName().replace("§a",""));
+                    p.closeInventory();
+                    p.chat("/mhn shop");
+                }
+            }
+        }
+    }
+
+    @EventHandler
+    public void onCloseInventory(InventoryCloseEvent e) {
+        Player p = (Player) e.getPlayer();
+        pstats.remove(p.getUniqueId());
+    }
+
 
 
     ////////////////////////////////////////////////////////////////////////////////////////////
